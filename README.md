@@ -13,7 +13,9 @@ Fallo **una sola volta** all'inizio per scaricare il progetto sul computer.
 cd [Scegli dove vuoi salvare la cartella e copiane l'indirizzo (`C:\` ecc.)]
 git clone [Inserisci qui il link che hai copiato prima]
 ```
-4. Inserisci nel terminale username e password di GitHub
+4. Inserisci nel terminale il tuo username di GitHub e premi Invio. Quando ti chiede la password, ricorda due cose importanti:
+   - **La password non si vede:** mentre scrivi o incolli, lo schermo resta vuoto. Inseriscila comunque e premi Invio.
+   - **Non usare la password normale:** devi creare un "Token". Vai su GitHub -> Clicca sulla tua foto in alto a destra -> Settings -> Developer settings (in fondo a sinistra) -> Personal access tokens -> Tokens (classic). Clicca "Generate new token (classic)", metti la spunta alla prima casella "repo" e clicca "Generate token" in fondo. Copia il codice che appare e incollalo nel terminale come password.
 5. Aprendo la cartella che si è creata, dovresti vedere un file `test_file.R`
 
 ### 1.b Lavorare sui file
@@ -38,7 +40,7 @@ git add .
 # 2. Salva le modifiche inserendo un messaggio breve tra virgolette
 git commit -m "Scrivi qui cosa hai fatto"
 
-# 3. Spedisci tutto su GitHub
+# 3. Spedisci tutto su GitHub (se ti chiede la password, usa sempre il Token)
 git push
 ```
 ---
