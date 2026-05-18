@@ -13,7 +13,8 @@ Fallo **una sola volta** all'inizio per scaricare il progetto sul computer.
 cd [Scegli dove vuoi salvare la cartella e copiane l'indirizzo (`C:\` ecc.)]
 git clone [Inserisci qui il link che hai copiato prima]
 ```
-4. Aprendo la cartella che si è creata, dovresti vedere un file `test_file.R`
+4. Inserisci nel terminale username e password di GitHub
+5. Aprendo la cartella che si è creata, dovresti vedere un file `test_file.R`
 
 ### 1.b Lavorare sui file
 Apri il **Terminal** dentro RStudio ed esegui questi comandi in ordine.
