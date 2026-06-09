@@ -9,6 +9,7 @@ library(leaps)
 library(GGally)
 library(ellipse)
 library(faraway)
+library(tidyverse)
 # library(qpcR)
 
 ## 1. Importazione dati ###################################################################
@@ -40,7 +41,7 @@ dataset$data_channel <- case_when(
   dataset$data_channel_is_world == 1         ~ "World",
   TRUE                                       ~ "Other"
 )
-dataset$data_channel <- as.factor(dataset$data_channel)
+dataset$data_channel = as.factor(dataset$data_channel)
 
 # Raggruppiamo i giorni della settimana in un unico fattore ordinato
 dataset$weekday <- case_when(
@@ -123,7 +124,6 @@ train_set_logs = train_set[, names(train_set) != "shares"]
 test_set_logs  = test_set[, names(test_set) != "shares"]
 
 # Tramite questa trasformazione il dataset è più simmetrico. Infatti,
-# Tramite questa trasformazione il dataset è più simmetrico. Infatti,
 # Visualizziamo i quantili della variabile logshares
 print(quantile(train_set_logs$logshares, probs = c(0.25, 0.50, 0.75, 0.90, 0.95, 0.98, 0.99)))
 
@@ -146,9 +146,78 @@ boxplot(train_set_logs$logshares,
         main = "Boxplot di Log(Shares) (Senza Outlier)",
         ylab = "Log(Shares)", col = "orange")
 
+### 1.d Verifichiamo la necessità di una trasformazione box-cox
+modello_lineare_base <- lm(shares ~ . - logshares - is_weekend, data = train_set)
+
+# Creiamo il grafico della trasformazione di Box-Cox
+# Cerchiamo il lambda ottimale in un intervallo standard [-2, 2]
+dev.new()
+bc <- boxcox(modello_lineare_base, lambda = seq(-2, 2, by = 0.1))
+
+# Estraiamo il valore esatto di lambda che massimizza la log-verosimiglianza
+lambda_ottimo <- bc$x[which.max(bc$y)]
+cat("Il lambda ottimale suggerito da Box-Cox è:", lambda_ottimo, "\n")
+
+# Siccome lambda ottimale è \lambda = 0, scegliamo come trasformazione il logaritmo.
 
 ## 2. Creazione del modello di regressione #####################################
 modello_completo = lm(logshares ~ ., data = train_set_logs)
 
-# Visualizzazione della sintesi inferenziale (Coefficienti, R2, t-test, F-test)
+### 2.a Visualizzazione della sintesi inferenziale (Coefficienti, R2, t-test, F-test) #####
 summary(modello_completo)
+
+## 3. Selezione delle covariate ################################################ 
+# Notiamo che weekdaySunday risulta NA perché c'è forte collinearità tra il factor "weekday" e "is_weekend".
+# Facciamo quindi un confronto tra i due sottomodelli in cui consideriamo
+# a. Solo is_weekend (1 è weekend, 0 è feriale)
+# b. Solo weekday (trascuriamo la distinzione in weekend)
+modello_is_weekend <- lm(logshares ~ . - weekday, data = train_set_logs)
+summary(modello_is_weekend)
+
+modello_weekday    <- lm(logshares ~ . - is_weekend, data = train_set_logs)
+summary(modello_weekday)
+
+Delta_AIC = AIC(modello_is_weekend) - AIC(modello_weekday)
+# Notiamo che l'R2 adjusted è leggermente migliore nel secondo caso, quindi lo teniamo.
+# Una conclusione analoga può essere ottenuta usando AIC. La differenza tra i due è 
+# positiva, quindi modello_weekday ha l'AIC più basso.
+
+train_set_logs$is_weekend <- NULL
+test_set_logs$is_weekend  <- NULL
+
+
+# Ora verifichiamo il VIF
+vif_model = vif(modello_weekday)
+print(vif_model)
+
+# Identifichiamo le variabili problematiche in modo robusto
+if (!is.null(dim(vif_model))) {
+  # CASO MATRICE: il modello contiene factor con gradi di libertà (Df) > 1.
+  # car restituisce 3 colonne: GVIF, Df, GVIF^(1/(2*Df)).
+  # Per paragonare l'ultima colonna a un VIF classico di 5, usiamo la radice quadrata di 5.
+  soglia <- sqrt(5) 
+  variabili_collineari = rownames(vif_model)[vif_model[, 3] > soglia]
+} else {
+  # CASO VETTORE: non ci sono factor complessi, restituisce i VIF standard.
+  soglia <- 5
+  variabili_collineari = names(vif_model)[vif_model > soglia]
+}
+
+cat("Variabili con forte collinearità (soglia equivalente a VIF > 5):\n")
+print(variabili_collineari)
+
+# Abbiamo identificato diverse colonne collineari e procediamo ad escluderle
+
+variabili_filtro_minimo <- c("LDA_04", "n_non_stop_words")
+
+train_set_logs_semi_pulito <- train_set_logs[, !(names(train_set_logs) %in% variabili_filtro_minimo)]
+
+# Ricreiamo il modello base escludendo anche is_weekend
+modello_semi_pulito <- lm(logshares ~ ., data = train_set_logs_semi_pulito)
+
+# Lanciamo lo stepAIC su questo set molto più grande
+cat("\nAvvio selezione stepwise (versione estesa) in corso... ci vorrà di più.\n")
+modello_ottimizzato_esteso <- stepAIC(modello_semi_pulito, direction = "both", trace = FALSE)
+
+# Valutiamo i risultati
+summary(modello_ottimizzato_esteso)
