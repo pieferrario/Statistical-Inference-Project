@@ -18,7 +18,7 @@ library(tidyverse)  # dplyr, tidyr, ggplot2
 
 
 ## 1. Importazione dati ---------------------------------------------------------
-dataset <- read_excel("sharing_dataset.xlsx", sheet = "Sheet1")
+dataset <- read_excel("sharing dataset.xlsx", sheet = "Sheet1")
 dataset <- as.data.frame(dataset)
 
 dim(dataset)
