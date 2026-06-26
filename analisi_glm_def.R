@@ -13,7 +13,7 @@ library(tidyverse)
 
 # --- DEFINIZIONE PALETTE COLORI (Midnight & Clinical) ---
 pal_midnight <- c("Good" = "blue", "Poor" = "brown3")
-col_neutral  <- "lightsteelblue"
+col_neutral  <- "lightblue"
 col_strutt   <- "blue"
 col_alert    <- "brown3"
 # --------------------------------------------------------
